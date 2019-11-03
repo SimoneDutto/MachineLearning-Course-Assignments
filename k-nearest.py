@@ -1,10 +1,11 @@
-from sklearn.datasets import load_wine
 from sklearn import neighbors, svm, metrics
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split, GridSearchCV
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+
 
 def plotDecisionBoundary(X_train, y_train, model, param, paramname):
     x_min, x_max = X_train[:, 0].min() - 1, X_train[:, 0].max() + 1
@@ -27,8 +28,7 @@ def plotDecisionBoundary(X_train, y_train, model, param, paramname):
     plt.xlabel("Alcohol")
     plt.ylabel("Malic acid")
 
-    plt.title("Wine classification ("+paramname+" = %i)"
-              % (param))
+    plt.title("Wine classification ("+paramname+" = %.3f)" %(param))
 
 
 def kNN():
@@ -86,7 +86,7 @@ def kNN():
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
 
-def linearSVM():
+def SVM(kernel):
     accuracy=[]
 
     c_values = [0.001,0.01,0.1,1,10,100,1000]
@@ -95,7 +95,7 @@ def linearSVM():
 
     for c in c_values:
 
-        l_svm = svm.SVC(kernel='linear', C=c)
+        l_svm = svm.SVC(kernel=kernel, C=c)
         
         scaler = StandardScaler()
         scaler.fit(X_train)
@@ -133,8 +133,8 @@ def linearSVM():
     
     # function to show the plot 
     plt.show() 
-
-    print("Best model with c = "+str(best_c)+"and accuracy "+str(max)+" on validation set")
+    print()
+    print("Best model with c = "+str(best_c)+" and accuracy "+str(max)+" on validation set")
 
     X_test_scaled = best_scaler.transform(X_test)
 
@@ -142,6 +142,30 @@ def linearSVM():
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
 
+def SVMGridSearch():
+    Cs = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
+    gammas = [0.001, 0.01, 0.1, 1]
+    param_grid = {'C': Cs, 'gamma' : gammas}
+    clfs = GridSearchCV(svm.SVC(kernel='rbf'), param_grid, cv=5, iid='False')
+    clfs.fit(X_train_val, y_train_val)
+
+    scores = clfs.cv_results_['mean_test_score']
+    scores = np.array(scores).reshape(len(Cs), len(gammas))
+
+    for ind, i in enumerate(Cs):
+        plt.plot(gammas, scores[ind], label='C: ' + str(i))
+    plt.legend()
+    plt.xlabel('Gamma')
+    plt.ylabel('Mean score')
+    plt.show()
+
+    print("Best model on training set has %r with accuracy %.4f" %(clfs.best_params_, clfs.best_score_))
+
+    print("Accuracy: %.4f" %(clfs.score(X_test, y_test)))
+
+
+    
+    
 
 data, y = load_wine(return_X_y=True)
 
@@ -155,10 +179,17 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test
 
 cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
 cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+while(1):
+    answer = input("Which classifier you want to use: (1) kNN (2) Linear SVM (3) RBF SVM (4) Grid search on SVM: ")
 
-answer = input("Which classifier you want to use: (1) kNN (2) Linear SVM: ")
-
-if(answer == "1"):
-    kNN()
-if(answer == "2"):
-    linearSVM()
+    if(answer == "1"):
+        kNN()
+    if(answer == "2"):
+        SVM("linear")
+    if(answer == "3"):
+        SVM("rbf")
+    if(answer == "4"):
+        SVMGridSearch()
+    if(answer=="q"):
+        print("Quitting..")
+        break
