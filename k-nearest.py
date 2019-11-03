@@ -31,37 +31,39 @@ def plotDecisionBoundary(X_train, y_train, model, param, paramname):
     plt.title("Wine classification ("+paramname+" = %.3f)" %(param))
 
 
-def kNN():
+def kNN(normalize, show):
     accuracy=[]
 
     k_values = [1,3,5,7]
 
     max = 0
+    scaler = StandardScaler()
+    
+    if(normalize):
+        scaler.fit(X_train)
+        X_train_used = scaler.transform(X_train) # scale train set
+        X_val_used = scaler.transform(X_val) # scale validation set with the same parameters
+    else:
+        X_train_used = X_train
+        X_val_used = X_val
 
     for n_neighbors in k_values:
 
         knn = neighbors.KNeighborsClassifier(n_neighbors)
+        knn.fit(X_train_used, y_train)
         
-        scaler = StandardScaler()
-        scaler.fit(X_train)
-
-        X_train_scaled = scaler.transform(X_train) # scale train set
-        X_val_scaled = scaler.transform(X_val) # scale validation set with the same parameters
-
-        knn.fit(X_train_scaled, y_train)
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
-        
-        plotDecisionBoundary(X_train_scaled, y_train, knn, n_neighbors, "k")
+        if show:
+            plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k")
 
-        y_pred = knn.predict(X_val_scaled)
+        y_pred = knn.predict(X_val_used)
         acc = metrics.accuracy_score(y_val, y_pred)
         
         if(acc > max):
             best_k = n_neighbors
             max = acc
             best_model = knn
-            best_scaler = scaler
         accuracy.append(acc)
 
     plt.figure()
@@ -71,52 +73,59 @@ def kNN():
     plt.ylabel('accuracy') 
     plt.xticks(k_values)
 
-    plt.plot(k_values, accuracy) 
+    plt.plot(k_values, accuracy, '--bo') 
     # giving a title to my graph 
     plt.title('Accuracy over k') 
     
     # function to show the plot 
-    plt.show() 
+    if show:
+        plt.show() 
 
     print("Best model with k = "+str(best_k)+" and accuracy "+str(max)+" on validation set")
 
-    X_test_scaled = best_scaler.transform(X_test)
+    if normalize:
+        X_test_used = scaler.transform(X_test)
+    else:
+        X_test_used = X_test
 
-    y_pred_final = best_model.predict(X_test_scaled)
+    y_pred_final = best_model.predict(X_test_used)
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
+    print("--------------------------------") 
 
-def SVM(kernel):
+def SVM(kernel, normalize, show):
     accuracy=[]
 
     c_values = [0.001,0.01,0.1,1,10,100,1000]
 
     max = 0
+    scaler = StandardScaler()
+    
+    if(normalize):
+        scaler.fit(X_train)
+        X_train_used = scaler.transform(X_train) # scale train set
+        X_val_used = scaler.transform(X_val) # scale validation set with the same parameters
+    else:
+        X_train_used = X_train
+        X_val_used = X_val
 
     for c in c_values:
 
-        l_svm = svm.SVC(kernel=kernel, C=c)
-        
-        scaler = StandardScaler()
-        scaler.fit(X_train)
+        l_svm = svm.SVC(kernel=kernel, C=c, gamma='scale')
+        l_svm.fit(X_train_used, y_train)
 
-        X_train_scaled = scaler.transform(X_train) # scale train set
-        X_val_scaled = scaler.transform(X_val) # scale validation set with the same parameters
-
-        l_svm.fit(X_train_scaled, y_train)
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
-        
-        plotDecisionBoundary(X_train_scaled, y_train, l_svm, c, "c")
+        if show:
+            plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k")
 
-        y_pred = l_svm.predict(X_val_scaled)
+        y_pred = l_svm.predict(X_val_used)
         acc = metrics.accuracy_score(y_val, y_pred)
         
         if(acc > max):
             best_c = c
             max = acc
             best_model = l_svm
-            best_scaler = scaler
         accuracy.append(acc)
 
     plt.figure()
@@ -127,47 +136,55 @@ def SVM(kernel):
     plt.xticks(c_values)
     plt.xscale('log')
 
-    plt.plot(c_values, accuracy) 
+    plt.plot(c_values, accuracy, '--bo') 
     # giving a title to my graph 
     plt.title('Accuracy over k') 
     
     # function to show the plot 
-    plt.show() 
-    print()
+    if show:
+        plt.show()
     print("Best model with c = "+str(best_c)+" and accuracy "+str(max)+" on validation set")
 
-    X_test_scaled = best_scaler.transform(X_test)
+    if normalize:
+        X_test_used = scaler.transform(X_test)
+    else:
+        X_test_used = X_test
 
-    y_pred_final = best_model.predict(X_test_scaled)
+    y_pred_final = best_model.predict(X_test_used)
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
+    print("--------------------------------") 
 
-def SVMManualGrid():
+def SVMManualGrid(normalize, show):
     Cs = [1, 10, 100, 1000]
     gammas = [0.001, 0.01, 0.1, 1]
 
     accuracy = np.zeros((len(Cs), len(gammas)))
     max = 0
     i = j = 0
+    scaler = StandardScaler()
+
+    if(normalize):
+        scaler.fit(X_train)
+        X_train_used = scaler.transform(X_train) # scale train set
+        X_val_used = scaler.transform(X_val) # scale validation set with the same parameters
+    else:
+        X_train_used = X_train
+        X_val_used = X_val
+
 
     for c in Cs:
         j = 0
         for gamma in gammas:
             l_svm = svm.SVC(kernel='rbf', C=c, gamma=gamma)
-        
-            scaler = StandardScaler()
-            scaler.fit(X_train)
-
-            X_train_scaled = scaler.transform(X_train) # scale train set
-            X_val_scaled = scaler.transform(X_val) # scale validation set with the same parameters
-
-            l_svm.fit(X_train_scaled, y_train)
+            l_svm.fit(X_train_used, y_train)
+            
             # Plot the decision boundary. For that, we will assign a color to each
             # point in the mesh [x_min, x_max]x[y_min, y_max].
-            
-            plotDecisionBoundary(X_train_scaled, y_train, l_svm, c, "c")
+            if show:
+                plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k")
 
-            y_pred = l_svm.predict(X_val_scaled)
+            y_pred = l_svm.predict(X_val_used)
             acc = metrics.accuracy_score(y_val, y_pred)
             
             if(acc > max):
@@ -175,54 +192,68 @@ def SVMManualGrid():
                 best_gamma = gamma
                 max = acc
                 best_model = l_svm
-                best_scaler = scaler
             accuracy[i][j] = acc
             j+=1
         i+=1
 
     plt.figure()
     for ind, i in enumerate(Cs):
-        plt.plot(gammas, accuracy[ind], label='C: ' + str(i))
+        plt.plot(gammas, accuracy[ind], '--o', label='C: ' + str(i))
     plt.legend()
     plt.xlabel('Gamma')
     plt.ylabel('Mean score')
-    plt.show()
+    if show:
+        plt.show()
 
-    plt.show() 
-    print()
+    
     print("Best model with c = "+str(best_c)+" and gamma = "+ str(best_gamma) +" and accuracy "+str(max)+" on validation set")
 
-    X_test_scaled = best_scaler.transform(X_test)
+    if normalize:
+        X_test_used = scaler.transform(X_test)
+    else:
+        X_test_used = X_test
 
-    y_pred_final = best_model.predict(X_test_scaled)
+    y_pred_final = best_model.predict(X_test_used)
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
-            
+    print("--------------------------------")   
 
-def SVMGridSearch():
+def SVMGridSearch(normalize, show):
     Cs = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
     gammas = [0.001, 0.01, 0.1, 1]
     param_grid = {'C': Cs, 'gamma' : gammas}
+    scaler = StandardScaler()
+
     clfs = GridSearchCV(svm.SVC(kernel='rbf'), param_grid, cv=5, iid='False')
-    clfs.fit(X_train_val, y_train_val)
+    if normalize:
+        scaler.fit(X_train_val)
+        X_train_used = scaler.transform(X_train_val) # scale train set
+    else:
+        X_train_used = X_train_val
+        
+    clfs.fit(X_train_used, y_train_val)
 
     scores = clfs.cv_results_['mean_test_score']
     scores = np.array(scores).reshape(len(Cs), len(gammas))
 
     for ind, i in enumerate(Cs):
-        plt.plot(gammas, scores[ind], label='C: ' + str(i))
+        plt.plot(gammas, scores[ind], '--o', label='C: ' + str(i))
     plt.legend()
     plt.xlabel('Gamma')
     plt.ylabel('Mean score')
-    plt.show()
+    if show:
+        plt.show()
 
     print("Best model on training set has %r with accuracy %.4f" %(clfs.best_params_, clfs.best_score_))
 
-    print("Accuracy: %.4f" %(clfs.score(X_test, y_test)))
+    if normalize:
+        X_test_used = scaler.transform(X_test)
+    else:
+        X_test_used = X_test
 
+    print("Accuracy on test set: %.4f" %(clfs.score(X_test_used, y_test)))
+    print("--------------------------------") 
 
-    
-    
 
 data, y = load_wine(return_X_y=True)
 
@@ -237,18 +268,65 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test
 cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
 cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
 while(1):
-    answer = input("Which classifier you want to use:\n-(1)kNN\n-(2)Linear SVM\n-(3)RBF SVM\n-(4)Manual SVM GridSearch \n-(5)K-Fold SVM GridSearch\nChoise: ")
+    answer = input("Which classifier you want to use (add norm if you want to normalize data):\n-(1)kNN\n-(2)Linear SVM\n-(3)RBF SVM\n-(4)Manual SVM GridSearch \n-(5)K-Fold SVM GridSearch\n"
+                +"-(all)All models\n-(q)Quit the application\nChoise: ")
 
     if(answer == "1"):
-        kNN()
+        print("KNN no normalization")
+        kNN(False, True)
+    if(answer == "1 norm"):
+        print("KNN with normalization")
+        kNN(True, True)
     if(answer == "2"):
-        SVM("linear")
+        print("SVM Linear no normalization")
+        SVM("linear", False, True)
+    if(answer == "2 norm"):
+        print("SVM Linear with normalization")
+        SVM("linear", True, True)
     if(answer == "3"):
-        SVM("rbf")
+        print("SVM rbf no normalization")
+        SVM("rbf", False, True)
+    if(answer == "3 norm"):
+        print("SVM rbf with normalization")
+        SVM("rbf", True, True)
     if(answer == "4"):
-        SVMManualGrid()
+        print("Manual Grid no normalization")
+        SVMManualGrid(False, True)
+    if(answer == "4 norm"):
+        print("Manual with normalization")
+        SVMManualGrid(True, True)
     if(answer == "5"):
-        SVMGridSearch()
+        print("SearchGrid no normalization")
+        SVMGridSearch(False, True)
+    if(answer == "5 norm"):
+        print("SearchGrid with normalization")
+        SVMGridSearch(True, True)
+    if(answer == "all"):
+        print("KNN no normalization")
+        kNN(False, False)
+        print("KNN with normalization")
+        kNN(True, False)
+        print("SVM Linear no normalization")
+        SVM("linear", False, False)
+        print("SVM Linear with normalization")
+        SVM("linear", True, False)
+        print("SVM rbf no normalization")
+        SVM("rbf", False, False)
+        print("SVM rbf with normalization")
+        SVM("rbf", True, False)
+        print("Manual Grid no normalization")
+        SVMManualGrid(False, False)
+        print("Manual with normalization")
+        SVMManualGrid(True, False)
+        print("SearchGrid no normalization")
+        SVMGridSearch(False, False)
+        print("SearchGrid with normalization")
+        SVMGridSearch(True, False)
     if(answer=="q"):
         print("Quitting...")
         break
+
+""" TO DO:
+    - comparare i modelli
+    - capire come si stampa una griglia
+ """
