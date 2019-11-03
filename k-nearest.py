@@ -142,6 +142,63 @@ def SVM(kernel):
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
 
+def SVMManualGrid():
+    Cs = [1, 10, 100, 1000]
+    gammas = [0.001, 0.01, 0.1, 1]
+
+    accuracy = np.zeros((len(Cs), len(gammas)))
+    max = 0
+    i = j = 0
+
+    for c in Cs:
+        j = 0
+        for gamma in gammas:
+            l_svm = svm.SVC(kernel='rbf', C=c, gamma=gamma)
+        
+            scaler = StandardScaler()
+            scaler.fit(X_train)
+
+            X_train_scaled = scaler.transform(X_train) # scale train set
+            X_val_scaled = scaler.transform(X_val) # scale validation set with the same parameters
+
+            l_svm.fit(X_train_scaled, y_train)
+            # Plot the decision boundary. For that, we will assign a color to each
+            # point in the mesh [x_min, x_max]x[y_min, y_max].
+            
+            plotDecisionBoundary(X_train_scaled, y_train, l_svm, c, "c")
+
+            y_pred = l_svm.predict(X_val_scaled)
+            acc = metrics.accuracy_score(y_val, y_pred)
+            
+            if(acc > max):
+                best_c = c
+                best_gamma = gamma
+                max = acc
+                best_model = l_svm
+                best_scaler = scaler
+            accuracy[i][j] = acc
+            j+=1
+        i+=1
+
+    plt.figure()
+    for ind, i in enumerate(Cs):
+        plt.plot(gammas, accuracy[ind], label='C: ' + str(i))
+    plt.legend()
+    plt.xlabel('Gamma')
+    plt.ylabel('Mean score')
+    plt.show()
+
+    plt.show() 
+    print()
+    print("Best model with c = "+str(best_c)+" and gamma = "+ str(best_gamma) +" and accuracy "+str(max)+" on validation set")
+
+    X_test_scaled = best_scaler.transform(X_test)
+
+    y_pred_final = best_model.predict(X_test_scaled)
+
+    print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
+            
+
 def SVMGridSearch():
     Cs = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
     gammas = [0.001, 0.01, 0.1, 1]
@@ -180,7 +237,7 @@ X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test
 cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
 cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
 while(1):
-    answer = input("Which classifier you want to use: (1) kNN (2) Linear SVM (3) RBF SVM (4) Grid search on SVM: ")
+    answer = input("Which classifier you want to use:\n-(1)kNN\n-(2)Linear SVM\n-(3)RBF SVM\n-(4)Manual SVM GridSearch \n-(5)K-Fold SVM GridSearch\nChoise: ")
 
     if(answer == "1"):
         kNN()
@@ -189,7 +246,9 @@ while(1):
     if(answer == "3"):
         SVM("rbf")
     if(answer == "4"):
+        SVMManualGrid()
+    if(answer == "5"):
         SVMGridSearch()
     if(answer=="q"):
-        print("Quitting..")
+        print("Quitting...")
         break
