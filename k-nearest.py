@@ -7,7 +7,7 @@ from matplotlib.colors import ListedColormap
 import numpy as np
 
 
-def plotDecisionBoundary(X_train, y_train, model, param, paramname):
+def plotDecisionBoundary(X_train, y_train, model, param, paramname, subplt):
     x_min, x_max = X_train[:, 0].min() - 1, X_train[:, 0].max() + 1
     y_min, y_max = X_train[:, 1].min() - 1, X_train[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.2),
@@ -16,19 +16,16 @@ def plotDecisionBoundary(X_train, y_train, model, param, paramname):
     Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
 
-
-    plt.figure()
-    plt.pcolormesh(xx, yy, Z, cmap=cmap_light)
+    subplt.contourf(xx, yy, Z, alpha=0.8)
+   
 
     # Plot also the training points
-    plt.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cmap_bold,
+    subplt.scatter(X_train[:, 0], X_train[:, 1], c=y_train,
                 edgecolor='k', s=20)
-    plt.xlim(xx.min(), xx.max())
-    plt.ylim(yy.min(), yy.max())
-    plt.xlabel("Alcohol")
-    plt.ylabel("Malic acid")
-
-    plt.title("Wine classification ("+paramname+" = %.3f)" %(param))
+    subplt.axis(x_max = xx.max(), x_min = xx.min, y_max = yy.max(), y_min = yy.min())
+    subplt.set_xlabel("Alcohol")
+    subplt.set_ylabel("Malic acid")
+    subplt.set_title("Wine classification ("+paramname+" = "+str(param)+")", pad=10)
 
 
 def kNN(normalize, show):
@@ -46,6 +43,10 @@ def kNN(normalize, show):
     else:
         X_train_used = X_train
         X_val_used = X_val
+    
+    figure, axs = plt.subplots(2,2, figsize=(20,25), constrained_layout=True)
+    axs = axs.ravel()
+    i = 0
 
     for n_neighbors in k_values:
 
@@ -55,7 +56,7 @@ def kNN(normalize, show):
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
         if show:
-            plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k")
+            plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k", axs[i])
 
         y_pred = knn.predict(X_val_used)
         acc = metrics.accuracy_score(y_val, y_pred)
@@ -65,7 +66,7 @@ def kNN(normalize, show):
             max = acc
             best_model = knn
         accuracy.append(acc)
-
+        i+=1
     plt.figure()
     # naming the x axis 
     plt.xlabel('k') 
@@ -100,6 +101,10 @@ def SVM(kernel, normalize, show):
 
     max = 0
     scaler = StandardScaler()
+
+    figure, axs = plt.subplots(4,2, figsize=(10,10), constrained_layout=True)
+    axs = axs.ravel()
+    i = 0
     
     if(normalize):
         scaler.fit(X_train)
@@ -117,7 +122,7 @@ def SVM(kernel, normalize, show):
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
         if show:
-            plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k")
+            plotDecisionBoundary(X_train_used, y_train, l_svm, c, "c",axs[i])
 
         y_pred = l_svm.predict(X_val_used)
         acc = metrics.accuracy_score(y_val, y_pred)
@@ -127,6 +132,7 @@ def SVM(kernel, normalize, show):
             max = acc
             best_model = l_svm
         accuracy.append(acc)
+        i+=1
 
     plt.figure()
     # naming the x axis 
@@ -164,6 +170,10 @@ def SVMManualGrid(normalize, show):
     i = j = 0
     scaler = StandardScaler()
 
+    figure, axs = plt.subplots(6,3, figsize=(15,15), constrained_layout=True)
+    axs = axs.ravel()
+    l = 0
+
     if(normalize):
         scaler.fit(X_train)
         X_train_used = scaler.transform(X_train) # scale train set
@@ -171,7 +181,6 @@ def SVMManualGrid(normalize, show):
     else:
         X_train_used = X_train
         X_val_used = X_val
-
 
     for c in Cs:
         j = 0
@@ -182,7 +191,8 @@ def SVMManualGrid(normalize, show):
             # Plot the decision boundary. For that, we will assign a color to each
             # point in the mesh [x_min, x_max]x[y_min, y_max].
             if show:
-                plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k")
+                plotDecisionBoundary(X_train_used, y_train, l_svm, (str(c)+"/"+str(gamma)), "c/gamma", axs[l])
+                l+=1
 
             y_pred = l_svm.predict(X_val_used)
             acc = metrics.accuracy_score(y_val, y_pred)
@@ -263,10 +273,8 @@ data, y = load_wine(return_X_y=True)
 X = data[:,:2]
 
 X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
-X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.28, random_state=1)
+X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.28, random_state=30)
 
-cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
-cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
 while(1):
     answer = input("Which classifier you want to use (add norm if you want to normalize data):\n-(1)kNN\n-(2)Linear SVM\n-(3)RBF SVM\n-(4)Manual SVM GridSearch \n-(5)K-Fold SVM GridSearch\n"
                 +"-(all)All models\n-(q)Quit the application\nChoise: ")
@@ -325,7 +333,7 @@ while(1):
     if(answer=="q"):
         print("Quitting...")
         break
-
+    plt.close(fig="all") 
 """ TO DO:
     - comparare i modelli
     - capire come si stampa una griglia
