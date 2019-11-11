@@ -4,8 +4,18 @@ from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split, GridSearchCV
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.colors import Normalize
 import numpy as np
 
+class MidpointNormalize(Normalize):
+
+    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+        self.midpoint = midpoint
+        Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.45, 0.85]
+        return np.ma.masked_array(np.interp(value, x, y))
 
 def plotDecisionBoundary(X_train, y_train, model, param, paramname, subplt):
     x_min, x_max = X_train[:, 0].min() - 1, X_train[:, 0].max() + 1
@@ -162,16 +172,16 @@ def SVM(kernel, normalize, show):
     print("--------------------------------") 
 
 def SVMManualGrid(normalize, show):
-    Cs = [1, 10, 100, 1000]
-    gammas = [0.001, 0.01, 0.1, 1]
+    Cs = [0.1, 1, 10, 100, 1000, 10000]
+    gammas = [0.001, 0.01, 0.1, 1, 10, 100]
 
     accuracy = np.zeros((len(Cs), len(gammas)))
     max = 0
     i = j = 0
     scaler = StandardScaler()
 
-    figure, axs = plt.subplots(6,3, figsize=(15,15), constrained_layout=True)
-    axs = axs.ravel()
+    #figure, axs = plt.subplots(len(Cs),len(gammas), figsize=(15,15), constrained_layout=True)
+    #axs = axs.ravel()
     l = 0
 
     if(normalize):
@@ -191,7 +201,7 @@ def SVMManualGrid(normalize, show):
             # Plot the decision boundary. For that, we will assign a color to each
             # point in the mesh [x_min, x_max]x[y_min, y_max].
             if show:
-                plotDecisionBoundary(X_train_used, y_train, l_svm, (str(c)+"/"+str(gamma)), "c/gamma", axs[l])
+                #plotDecisionBoundary(X_train_used, y_train, l_svm, (str(c)+"/"+str(gamma)), "c/gamma", axs[l])
                 l+=1
 
             y_pred = l_svm.predict(X_val_used)
@@ -206,12 +216,18 @@ def SVMManualGrid(normalize, show):
             j+=1
         i+=1
 
-    plt.figure()
-    for ind, i in enumerate(Cs):
-        plt.plot(gammas, accuracy[ind], '--o', label='C: ' + str(i))
-    plt.legend()
-    plt.xlabel('Gamma')
-    plt.ylabel('Mean score')
+  
+    plt.figure(figsize=(10, 10))
+    plt.subplots_adjust(left=.2, right=0.95, bottom=0.15, top=0.95)
+    plt.imshow(accuracy, interpolation='nearest', cmap=plt.cm.hot,
+           norm=MidpointNormalize(vmin=0.3, midpoint=0.90))
+    plt.xlabel('C')
+    plt.ylabel('gamma')
+    plt.colorbar()
+    plt.xticks(np.arange(len(Cs)), Cs, rotation=45)
+    plt.yticks(np.arange(len(gammas)), gammas)
+    plt.title('Validation accuracy')
+
     if show:
         plt.show()
 
@@ -271,9 +287,17 @@ data, y = load_wine(return_X_y=True)
 #print(y.shape)
 
 X = data[:,:2]
+plt.figure()
+plt.scatter(X[:, 0], X[:, 1], c=y,
+            edgecolor='k', s=20)
+plt.xlabel("Alcohol")
+plt.ylabel("Malic acid")
+plt.title("Wine classification dataset", pad=10)
 
 X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
 X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.28, random_state=30)
+
+
 
 while(1):
     answer = input("Which classifier you want to use (add norm if you want to normalize data):\n-(1)kNN\n-(2)Linear SVM\n-(3)RBF SVM\n-(4)Manual SVM GridSearch \n-(5)K-Fold SVM GridSearch\n"
