@@ -109,7 +109,24 @@ After both GridSearch with and without K-Fold, we can assure that the best value
 For this dataset the best option is to use SVM with RBF kernel, it is able to shape better data and it is way faster to classify once we have trained the model. kNN is easy to tune, support multi-class classification easily and it doesn't need a proper training phase.
 
 #### Different attributes
-  
+ Since now, we have tried our model with the first 2 attributes, but what if we try with different attributes.
+For better choosing I decided to plot the correlation matrix, adding the class label as a column.
+![ ](corr_matrix.png)
+The best choise is to take 2 attributes with correlation near 0, because it means we can exploit the maximum quantity of information from them. We can notice that the first and second, our previous choise was good. Attribute 0 and 11 have correlation equal to 0.07, so we are gonna try with these two.
+This table shows the result of the model choosen by the validation process when permorms on test set.
+
+| Classifier  | Parameter | Normalization| Accuracy on test set  | 
+|---|---|----|---|
+|  kNN | k=3|  N | 0.963  |  
+| kNN | k=3  |  Y |  0.944|
+|  SVM-Linear | C=100| N  | 0.963  |
+|  SVM-Linear | C=1 |  Y |  0.963 |
+|  SVM-rbf | C=1000 gamma=scale|  N | 0.963  |
+|  SVM-rbf | C=0.1 gamma=scale |  Y | 0.963 |
+
+
+
+
 
 
 

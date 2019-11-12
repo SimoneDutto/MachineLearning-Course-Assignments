@@ -32,7 +32,8 @@ def heatmap(datas, ax=None,
         ax = plt.gca()
 
     # Plot the heatmap
-    im = ax.imshow(datas, **kwargs)
+    print(datas)
+    im = ax.imshow(datas)
 
     # Create colorbar
     cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)

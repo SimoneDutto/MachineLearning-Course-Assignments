@@ -187,10 +187,9 @@ def SVMManualGrid(normalize, show):
         i+=1
 
   
-    im, cbar = ut.heatmap(accuracy, cmap="RdYlGn")
-    ut.annotate_heatmap(im)
-    
     if show:
+        im, cbar = ut.heatmap(accuracy, cmap="RdYlGn")
+        ut.annotate_heatmap(im)
         plt.show()
 
     
@@ -224,10 +223,9 @@ def SVMGridSearch(normalize, show):
     scores = clfs.cv_results_['mean_test_score']
     scores = np.array(scores).reshape(len(Cs), len(gammas))
 
-    im, cbar = ut.heatmap(scores, cmap="RdYlGn")
-    ut.annotate_heatmap(im)
-
     if show:
+        im, cbar = ut.heatmap(scores, cmap="RdYlGn")
+        ut.annotate_heatmap(im)
         plt.show()
 
     print("Best model on training set has %r with accuracy %.4f" %(clfs.best_params_, clfs.best_score_))
@@ -264,14 +262,9 @@ data, y = load_wine(return_X_y=True)
 
 # change this to change attributes
 attribute1 = 0
-attribute2 = 1 
+attribute2 = 1
 
 X = data[:,[attribute1, attribute2]]
-
-
-
-
-
 X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.3, random_state=1) 
 X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=2/7, random_state=30) 
 
