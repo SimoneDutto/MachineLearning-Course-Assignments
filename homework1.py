@@ -3,39 +3,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split, GridSearchCV
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from matplotlib.colors import Normalize
+import util as ut
 import numpy as np
-
-class MidpointNormalize(Normalize):
-
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        self.midpoint = midpoint
-        Normalize.__init__(self, vmin, vmax, clip)
-
-    def __call__(self, value, clip=None):
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.45, 0.85]
-        return np.ma.masked_array(np.interp(value, x, y))
-
-def plotDecisionBoundary(X_train, y_train, model, param, paramname, subplt):
-    x_min, x_max = X_train[:, 0].min() - 1, X_train[:, 0].max() + 1
-    y_min, y_max = X_train[:, 1].min() - 1, X_train[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.2),
-                         np.arange(y_min, y_max, 0.2))
-    
-    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-    Z = Z.reshape(xx.shape)
-
-    subplt.contourf(xx, yy, Z, alpha=0.8)
-   
-
-    # Plot also the training points
-    subplt.scatter(X_train[:, 0], X_train[:, 1], c=y_train,
-                edgecolor='k', s=20)
-    subplt.axis(x_max = xx.max(), x_min = xx.min, y_max = yy.max(), y_min = yy.min())
-    subplt.set_xlabel("Alcohol")
-    subplt.set_ylabel("Malic acid")
-    subplt.set_title("Wine classification ("+paramname+" = "+str(param)+")", pad=10)
+import pandas as pd
 
 
 def kNN(normalize, show):
@@ -66,7 +36,7 @@ def kNN(normalize, show):
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
         if show:
-            plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k", axs[i])
+            ut.plotDecisionBoundary(X_train_used, y_train, knn, n_neighbors, "k", axs[i])
 
         y_pred = knn.predict(X_val_used)
         acc = metrics.accuracy_score(y_val, y_pred)
@@ -132,7 +102,7 @@ def SVM(kernel, normalize, show):
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
         if show:
-            plotDecisionBoundary(X_train_used, y_train, l_svm, c, "c",axs[i])
+            ut.plotDecisionBoundary(X_train_used, y_train, l_svm, c, "c",axs[i])
 
         y_pred = l_svm.predict(X_val_used)
         acc = metrics.accuracy_score(y_val, y_pred)
@@ -217,17 +187,9 @@ def SVMManualGrid(normalize, show):
         i+=1
 
   
-    plt.figure(figsize=(10, 10))
-    plt.subplots_adjust(left=.2, right=0.95, bottom=0.15, top=0.95)
-    plt.imshow(accuracy, interpolation='nearest', cmap=plt.cm.hot,
-           norm=MidpointNormalize(vmin=0.3, midpoint=0.90))
-    plt.xlabel('C')
-    plt.ylabel('gamma')
-    plt.colorbar()
-    plt.xticks(np.arange(len(Cs)), Cs, rotation=45)
-    plt.yticks(np.arange(len(gammas)), gammas)
-    plt.title('Validation accuracy')
-
+    im, cbar = ut.heatmap(accuracy, cmap="RdYlGn")
+    ut.annotate_heatmap(im)
+    
     if show:
         plt.show()
 
@@ -245,28 +207,26 @@ def SVMManualGrid(normalize, show):
     print("--------------------------------")   
 
 def SVMGridSearch(normalize, show):
-    Cs = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
-    gammas = [0.001, 0.01, 0.1, 1]
+    Cs = [0.01, 0.1, 1, 10, 100, 1000]
+    gammas = [0.001, 0.01, 0.1, 1, 10, 100]
     param_grid = {'C': Cs, 'gamma' : gammas}
     scaler = StandardScaler()
-
+    
     clfs = GridSearchCV(svm.SVC(kernel='rbf'), param_grid, cv=5, iid='False')
     if normalize:
-        scaler.fit(X_train_val)
-        X_train_used = scaler.transform(X_train_val) # scale train set
+        scaler.fit(X_train)
+        X_train_used = scaler.transform(X_train) # scale train set
     else:
-        X_train_used = X_train_val
+        X_train_used = X_train
         
-    clfs.fit(X_train_used, y_train_val)
+    clfs.fit(X_train_used, y_train)
 
     scores = clfs.cv_results_['mean_test_score']
     scores = np.array(scores).reshape(len(Cs), len(gammas))
 
-    for ind, i in enumerate(Cs):
-        plt.plot(gammas, scores[ind], '--o', label='C: ' + str(i))
-    plt.legend()
-    plt.xlabel('Gamma')
-    plt.ylabel('Mean score')
+    im, cbar = ut.heatmap(scores, cmap="RdYlGn")
+    ut.annotate_heatmap(im)
+
     if show:
         plt.show()
 
@@ -280,28 +240,48 @@ def SVMGridSearch(normalize, show):
     print("Accuracy on test set: %.4f" %(clfs.score(X_test_used, y_test)))
     print("--------------------------------") 
 
+def analizeData():
+    datas = pd.DataFrame(np.c_[data, y])
+    corr = datas.corr()
+    print(corr.shape)
+    plt.figure(figsize=(10,10))
+    im, cbar= ut.heatmap(corr, cmap="RdYlGn")
+    texts = ut.annotate_heatmap(im)
+    
+    plt.figure()
+    plt.scatter(X[:, 0], X[:, 1], c=y,
+                edgecolor='k', s=20)
+    plt.xlabel("Alcohol")
+    plt.ylabel("Malic acid")
+    plt.title("Wine classification dataset", pad=10)
+    plt.show()
+
 
 data, y = load_wine(return_X_y=True)
 
 #print(data.shape)
 #print(y.shape)
 
-X = data[:,:2]
-plt.figure()
-plt.scatter(X[:, 0], X[:, 1], c=y,
-            edgecolor='k', s=20)
-plt.xlabel("Alcohol")
-plt.ylabel("Malic acid")
-plt.title("Wine classification dataset", pad=10)
+# change this to change attributes
+attribute1 = 0
+attribute2 = 1 
 
-X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
-X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=0.28, random_state=30)
+X = data[:,[attribute1, attribute2]]
 
 
+
+
+
+X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.3, random_state=1) 
+X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=2/7, random_state=30) 
+
+#print(X_train.shape)
+#print(X_val.shape)
+#print(X_test.shape)
 
 while(1):
     answer = input("Which classifier you want to use (add norm if you want to normalize data):\n-(1)kNN\n-(2)Linear SVM\n-(3)RBF SVM\n-(4)Manual SVM GridSearch \n-(5)K-Fold SVM GridSearch\n"
-                +"-(all)All models\n-(q)Quit the application\nChoise: ")
+                +"-(all)All models\n-(datainf) For data statistics\n-(q)Quit the application\nChoise: ")
 
     if(answer == "1"):
         print("KNN no normalization")
@@ -354,6 +334,8 @@ while(1):
         SVMGridSearch(False, False)
         print("SearchGrid with normalization")
         SVMGridSearch(True, False)
+    if(answer=="datainf"):
+        analizeData()
     if(answer=="q"):
         print("Quitting...")
         break

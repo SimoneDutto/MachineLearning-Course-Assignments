@@ -7,7 +7,7 @@ The data is the results of a chemical analysis of wines grown in the same region
 **Characteristics:**
 -  178 rows
 -  3 classes
-- 13 numeric continuos attributes, counting also the class label
+- 13 numeric continuos attributes plus the class label
 -  No missing attribute values
 From the 12 attributes we choose to take the first two, which are respectively *Alcohol* and *Malic acid* 
 ![ ](DataSet.png )
@@ -20,18 +20,21 @@ For the normalization procedure I've used  `sklearn.preprocessing.StandardScaler
 
 $$ z =  (x-u)/s $$
 
+*Disclaimer*: After I tried different random seeds for the splitting, I noticed the small size of the dataset influence a lot the results of the classifiers, with varying accuracy from 70% to 90% accuracy.
+So, even if normalization is suggested for kNN and SVM, with this dataset it doesn't affect always the results and for some splitting a seed can reduce the accuracy of the classifier on normalized data with respect to non-normalized ones.   
+
 ####K-Nearest Neighboors Classifier
 The intuition is to classify a new entry calculating the *distance* from this point to its nearest   *k-points* and assigning the label according to the most present label in its k-neighborhood.
 So, the critical parameters to choose are *k* and the *distance* metric.
 I used for the K-NN algorithm `sklearn.neighbors.KNeighborsClassifier` and trained different model with k = [1,3,5,7] and the minkowski distance metric $$(\sum_{i=1}^{n}{|X_{i} - Y_{i}|^{p}})^{1/p} $$ that in 2-dimensions(p=2) is equal to Euclidean distance.
 Choosing *k* is crucial, too little and the classifier is too sensible to outliers, too large and the classifier is not able to generalize enough.
-For example with k=1 we can see that the decision boundaries highlight the outlier and compromise the classification.
+For example with k=1 we can see that the decision boundaries highlight the outliers and the classification is compromised.
 ![ ](knn.png )
 ![ ](knn_acc.png )
-According to our validation process the best value for k is 7 with an accuracy of 80%. 
-Therefore, we obtain an accuracy on test set of 81%.
+According to our validation process the best value for k is 7 with an accuracy of 80.5%. 
+Therefore, we obtain an accuracy on test set of 81.5%.
 
-Even if normalizing sometimes could help the classifier in this case it won't. I suppose it's because Alcohol attribute is much more important than Malic acid in distinguish these classes, so normalizing we are balancing the weight of the two attributes and consequencenly we are reducing the accuracy.
+Normalization is suggested for kNN. Even if, in this case, the result on test set is a little bit lower with a 79.6% accuracy.
 ![ ](knn_norm.png )
 ![ ](knn_norm_acc.png )
 
@@ -44,11 +47,11 @@ I trained model with different C ([0.001,0.01,0.1,1,10,100,1000]) to see how our
 I used   `sklearn.svm.SVC ` with kernel = "linear". 
 ![ ](svmlinear.png )
 ![ ](svmlinear_acc.png )
-The best accuracy on validation set is obtained with C=0.1, in fact using this model on our test set we peak to 85%. 
+The best accuracy on validation set is obtained with C=0.1 (75.0%) and on our test set we peak to 85.1%. 
 It is interesting to see that if we choose low values of C our boundaries are wrong because the relaxation are too strong.
 
-For SVM normalization is crucial, because the core is base on distance measument. In fact, with the dataset normalized and C=1 we reach 88% of accuracy.
-
+For SVM normalization is crucial, because the core is base on distance measument. 
+In fact, with C=1, we obtain 88.9% accuracy on test set. 
 ![ ](svmlinear_norm.png )
 ![ ](svmlinear_norm_acc.png )
 
@@ -64,9 +67,9 @@ Gamma is the hyperparameter which express how far the influence of a single trai
 ![ ](svmrbf_acc.png )
 
 The boundaries are changed, in fact we can clearly obser that with C = 1000, for example, the shape is spheric which is not possible with linear kernel.
-The highest accuracy on validation is with C = 100, and this model has a 89% accuracy on test set. 
+The highest accuracy on validation is with C = 100 (80.5%), and this model has a 88.9% accuracy on test set. 
 
-If we normalize the dataset is easier to see the non-linear boundaries, and with normalization we obtain the highest value of accuracy on validation set. In fact we peak to 83% with  C=1. This model gets 82% on test set.
+Normalizing, we obtain the same result on validation set, and a little bit lower accuracy on test set with C=1 (83.3%).
 
 ![ ](svmrbf_norm.png )
 ![ ](svmrbf_norm_acc.png )
@@ -76,12 +79,37 @@ When we have more than one hyperparameter to tune is suggested to try each combi
 For example, with RBF kernel both gamma and C have to be tuned in order to reach the best result.
 I've trained several models with all the combinations of  C= [0.1, 1, 10, 100, 1000, 10000] and gamma = [0.001, 0.01, 0.1, 1, 10, 100]
 ![ ](gridmanual_acc.png )
-We can get that gamma too low is not able to shape correctly the dataset and gamma too high overfits the model. The best accuracy on validation set is obtained with C=0.1 and gamma=1, this model reaches 83% on test set.
+We can get that gamma too low is not able to shape correctly the dataset and gamma too high overfits the model. The best accuracy on validation set is obtained with C=0.1 and gamma=1 (80.5%), this model reaches 85.1% on test set.
 
-With normalization the best model is with C=1 and gamma=1, but the performace remain the same with 83% of accuracy on test set.
+With normalization the best model is with C=1 and gamma=1 (80.5% accuracy on validation), than 83.3% on test set.
 ![ ](gridmanual_norm_acc.png )
 
 
+#### GridSearch and K-Fold
+Usually when the dataset is small, as it is ours, it is a good choise to use cross-validation.  K-Fold is the most common cross validation method. 
+It consists in:
+- Shuffle the dataset randomly.
+- Split the dataset into k groups
+- For each unique group:
+- Take the group as a hold out or test data set
+- Take the remaining groups as a training data set
+- Fit a model on the training set and evaluate it on the test set
+- Retain the evaluation score and discard the model
+- Summarize the skill of the model using the sample of model evaluation scores
+In our case k is choosen to be 5. 
+I used  `sklearn.model_selection.GridSearchCV `, which permits to do the k-fold alongside the combination of all parameters.
+![ ](k_fold_acc.png )
+The best model is with C=1 and gamma=1, it reaches 78.4% accuracy on validation set.
+
+With normalization we peak at 85% accuracy on test set.
+![ ](k_fold_norm_acc.png )
+After both GridSearch with and without K-Fold, we can assure that the best value for gamma is the value set by *scale* option.
+
+#### SVM or kNN
+For this dataset the best option is to use SVM with RBF kernel, it is able to shape better data and it is way faster to classify once we have trained the model. kNN is easy to tune, support multi-class classification easily and it doesn't need a proper training phase.
+
+#### Different attributes
+  
 
 
 
