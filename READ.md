@@ -1,17 +1,20 @@
-#Machine Learning and Artificial Intelligence: Homework_1
-####Description of the assignment
+# Machine Learning and Artificial Intelligence: Homework_1
+#### Description of the assignment
 The purpose of this work is to use some classification algorithms and compare them with a toy dataset given by the sklearn library. 
-####Dataset
+#### Dataset
 The Wine dataset is a preset of sklearn, it is a copy  of the UCI ML Wine recognition dataset.
 The data is the results of a chemical analysis of wines grown in the same region in Italy by three different cultivators. There are different measurements taken for different constituents found in the three types of wine.
+
 **Characteristics:**
 -  178 rows
 -  3 classes
 - 13 numeric continuos attributes plus the class label
 -  No missing attribute values
 From the 12 attributes we choose to take the first two, which are respectively *Alcohol* and *Malic acid* 
-![ ](DataSet.png )
-####Training procedure
+
+<img src="DataSet.png" alt="drawing" width="500"/>
+
+#### Training procedure
 We split data into Train, Validation and Test with  50%, 20% and 30% partition. 
 Then, we train our model on Train set, we tune our hyperparameters on Validation set and finally we evaluate performance on the Test set. 
 **Normalization**
@@ -38,7 +41,7 @@ Normalization is suggested for kNN. Even if, in this case, the result on test se
 ![ ](knn_norm.png )
 ![ ](knn_norm_acc.png )
 
-####SVM-Linear
+#### SVM-Linear
 The intuition here is: if the training data is linearly separable, we can select two parallel hyperplanes that separate the two classes of data, so that the distance between them is as large as possible. The region bounded by these two hyperplanes is called the "margin", and the maximum-margin hyperplane is the hyperplane that lies halfway between them. If we have have more than 2 classes, this operation is performed for each couple. 
 
 Sometimes our data are not linearly separable, so we can define a slack variable that, roughly, indicates how much we must move our point so that it is correctly and confidently classified. When we introduce these variable we must decide how much we penalize these variables, so that our calssification is not falsed too much by the use of them.
@@ -55,7 +58,7 @@ In fact, with C=1, we obtain 88.9% accuracy on test set.
 ![ ](svmlinear_norm.png )
 ![ ](svmlinear_norm_acc.png )
 
-####SVM-RBF
+#### SVM-RBF
 In addition to performing linear classification, SVMs can efficiently perform a non-linear classification using what is called the kernel trick, implicitly mapping their inputs into high-dimensional feature spaces.
 The kernel trick avoids the explicit mapping that is needed to get linear learning algorithms to learn a nonlinear function or decision boundary, we can define an arbitrary kernel function k(x~n~,x~m~) that we can substitute for our inner products when we are learning the SVM.
 RBF kernel: $$ K(\mathbf {x} ,\mathbf {x’} )=\exp \left(-{\frac {||\mathbf {x} -\mathbf {x’} ||^{2}}{2\sigma ^{2}}}\right) $$
@@ -112,7 +115,8 @@ For this dataset the best option is to use SVM with RBF kernel, it is able to sh
  Since now, we have tried our model with the first 2 attributes, but what if we try with different attributes.
 For better choosing I decided to plot the correlation matrix, adding the class label as a column.
 ![ ](corr_matrix.png)
-The best choise is to take 2 attributes with correlation near 0, because it means we can exploit the maximum quantity of information from them. We can notice that the first and second, our previous choise was good. Attribute 0 and 11 have correlation equal to 0.07, so we are gonna try with these two.
+The best choise is to take 2p attributes with correlation near 0, because it means we can exploit the maximum quantity of information from them. We can notice that the first and second, our previous choise was good. 
+Attribute 0 and 11 have correlation equal to 0.07, so we are gonna try with these two.
 This table shows the result of the model choosen by the validation process when permorms on test set.
 
 | Classifier  | Parameter | Normalization| Accuracy on test set  | 
@@ -123,6 +127,8 @@ This table shows the result of the model choosen by the validation process when 
 |  SVM-Linear | C=1 |  Y |  0.963 |
 |  SVM-rbf | C=1000 gamma=scale|  N | 0.963  |
 |  SVM-rbf | C=0.1 gamma=scale |  Y | 0.963 |
+
+
 
 
 

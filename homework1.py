@@ -14,15 +14,15 @@ def kNN(normalize, show):
     k_values = [1,3,5,7]
 
     max = 0
-    scaler = StandardScaler()
     
     if(normalize):
-        scaler.fit(X_train)
-        X_train_used = scaler.transform(X_train) # scale train set
-        X_val_used = scaler.transform(X_val) # scale validation set with the same parameters
+        X_train_used = X_train_scaled # scale train set
+        X_val_used = X_val_scaled # scale validation set with the same parameters
+        X_test_used = X_test_scaled
     else:
         X_train_used = X_train
         X_val_used = X_val
+        X_test_used = X_test
     
     figure, axs = plt.subplots(2,2, figsize=(20,25), constrained_layout=True)
     axs = axs.ravel()
@@ -62,12 +62,7 @@ def kNN(normalize, show):
     if show:
         plt.show() 
 
-    print("Best model with k = "+str(best_k)+" and accuracy "+str(max)+" on validation set")
-
-    if normalize:
-        X_test_used = scaler.transform(X_test)
-    else:
-        X_test_used = X_test
+    print("Best model with k = "+str(best_k)+" and accuracy "+str(max)+" on validation set")        
 
     y_pred_final = best_model.predict(X_test_used)
 
@@ -80,19 +75,19 @@ def SVM(kernel, normalize, show):
     c_values = [0.001,0.01,0.1,1,10,100,1000]
 
     max = 0
-    scaler = StandardScaler()
 
     figure, axs = plt.subplots(4,2, figsize=(10,10), constrained_layout=True)
     axs = axs.ravel()
     i = 0
     
     if(normalize):
-        scaler.fit(X_train)
-        X_train_used = scaler.transform(X_train) # scale train set
-        X_val_used = scaler.transform(X_val) # scale validation set with the same parameters
+        X_train_used = X_train_scaled # scale train set
+        X_val_used = X_val_scaled # scale validation set with the same parameters
+        X_test_used = X_test_scaled
     else:
         X_train_used = X_train
         X_val_used = X_val
+        X_test_used = X_test
 
     for c in c_values:
 
@@ -131,11 +126,6 @@ def SVM(kernel, normalize, show):
         plt.show()
     print("Best model with c = "+str(best_c)+" and accuracy "+str(max)+" on validation set")
 
-    if normalize:
-        X_test_used = scaler.transform(X_test)
-    else:
-        X_test_used = X_test
-
     y_pred_final = best_model.predict(X_test_used)
 
     print("Accuracy on test set: "+str(metrics.accuracy_score(y_test,y_pred_final)))
@@ -155,12 +145,13 @@ def SVMManualGrid(normalize, show):
     l = 0
 
     if(normalize):
-        scaler.fit(X_train)
-        X_train_used = scaler.transform(X_train) # scale train set
-        X_val_used = scaler.transform(X_val) # scale validation set with the same parameters
+        X_train_used = X_train_scaled # scale train set
+        X_val_used = X_val_scaled # scale validation set with the same parameters
+        X_test_used = X_test_scaled
     else:
         X_train_used = X_train
         X_val_used = X_val
+        X_test_used = X_test
 
     for c in Cs:
         j = 0
@@ -195,10 +186,6 @@ def SVMManualGrid(normalize, show):
     
     print("Best model with c = "+str(best_c)+" and gamma = "+ str(best_gamma) +" and accuracy "+str(max)+" on validation set")
 
-    if normalize:
-        X_test_used = scaler.transform(X_test)
-    else:
-        X_test_used = X_test
 
     y_pred_final = best_model.predict(X_test_used)
 
@@ -213,12 +200,13 @@ def SVMGridSearch(normalize, show):
     
     clfs = GridSearchCV(svm.SVC(kernel='rbf'), param_grid, cv=5, iid='False')
     if normalize:
-        scaler.fit(X_train)
-        X_train_used = scaler.transform(X_train) # scale train set
+        X_train_used = X_train_val_scaled # scale train set
+        X_test_used = X_test_scaled
     else:
-        X_train_used = X_train
+        X_train_used = X_train_val
+        X_test_used = X_test
         
-    clfs.fit(X_train_used, y_train)
+    clfs.fit(X_train_used, y_train_val)
 
     scores = clfs.cv_results_['mean_test_score']
     scores = np.array(scores).reshape(len(Cs), len(gammas))
@@ -229,11 +217,7 @@ def SVMGridSearch(normalize, show):
         plt.show()
 
     print("Best model on training set has %r with accuracy %.4f" %(clfs.best_params_, clfs.best_score_))
-
-    if normalize:
-        X_test_used = scaler.transform(X_test)
-    else:
-        X_test_used = X_test
+        
 
     print("Accuracy on test set: %.4f" %(clfs.score(X_test_used, y_test)))
     print("--------------------------------") 
@@ -241,7 +225,7 @@ def SVMGridSearch(normalize, show):
 def analizeData():
     datas = pd.DataFrame(np.c_[data, y])
     corr = datas.corr()
-    print(corr.shape)
+    #print(corr.shape)
     plt.figure(figsize=(10,10))
     im, cbar= ut.heatmap(corr, cmap="RdYlGn")
     texts = ut.annotate_heatmap(im)
@@ -267,6 +251,20 @@ attribute2 = 1
 X = data[:,[attribute1, attribute2]]
 X_train_val, X_test, y_train_val, y_test = train_test_split(X, y, test_size=0.3, random_state=1) 
 X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=2/7, random_state=30) 
+
+# normalized data
+scaler = StandardScaler()
+scaler.fit(X_train_val)
+X_train_scaled = scaler.transform(X_train)
+X_val_scaled =  scaler.transform(X_val)
+X_test_scaled = scaler.transform(X_test)
+
+# normalized data for the cross-validation
+scaler1 = StandardScaler()
+scaler1.fit(X_train_val)
+X_train_val_scaled = scaler1.transform(X_train_val)
+X_test_scaleds = scaler1.transform(X_test)
+
 
 #print(X_train.shape)
 #print(X_val.shape)

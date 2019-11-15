@@ -32,7 +32,7 @@ def heatmap(datas, ax=None,
         ax = plt.gca()
 
     # Plot the heatmap
-    print(datas)
+    #print(datas)
     im = ax.imshow(datas)
 
     # Create colorbar
