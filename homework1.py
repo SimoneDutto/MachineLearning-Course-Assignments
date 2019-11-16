@@ -2,6 +2,7 @@ from sklearn import neighbors, svm, metrics
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import load_wine
 from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 import util as ut
 import numpy as np
@@ -179,7 +180,7 @@ def SVMManualGrid(normalize, show):
 
   
     if show:
-        im, cbar = ut.heatmap(accuracy, cmap="RdYlGn")
+        im, cbar = ut.heatmap(accuracy, Cs, gammas, cmap="RdYlGn")
         ut.annotate_heatmap(im)
         plt.show()
 
@@ -195,39 +196,44 @@ def SVMManualGrid(normalize, show):
 def SVMGridSearch(normalize, show):
     Cs = [0.01, 0.1, 1, 10, 100, 1000]
     gammas = [0.001, 0.01, 0.1, 1, 10, 100]
-    param_grid = {'C': Cs, 'gamma' : gammas}
-    scaler = StandardScaler()
-    
-    clfs = GridSearchCV(svm.SVC(kernel='rbf'), param_grid, cv=5, iid='False')
+    param_grid = {'svm__C': Cs, 'svm__gamma' : gammas}
+
+
     if normalize:
-        X_train_used = X_train_val_scaled # scale train set
-        X_test_used = X_test_scaled
+        pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('svm', svm.SVC(kernel='rbf'))])
     else:
-        X_train_used = X_train_val
-        X_test_used = X_test
+         pipe = Pipeline([
+              ('svm', svm.SVC(kernel='rbf'))])
+
+    
+    clfs = GridSearchCV(pipe, param_grid, cv=5, iid='False')
         
-    clfs.fit(X_train_used, y_train_val)
+    clfs.fit(X_train_val, y_train_val)
 
     scores = clfs.cv_results_['mean_test_score']
     scores = np.array(scores).reshape(len(Cs), len(gammas))
 
     if show:
-        im, cbar = ut.heatmap(scores, cmap="RdYlGn")
+        im, cbar = ut.heatmap(scores, Cs, gammas, cmap="RdYlGn")
         ut.annotate_heatmap(im)
         plt.show()
 
     print("Best model on training set has %r with accuracy %.4f" %(clfs.best_params_, clfs.best_score_))
         
 
-    print("Accuracy on test set: %.4f" %(clfs.score(X_test_used, y_test)))
+    print("Accuracy on test set: %.4f" %(clfs.score(X_test, y_test)))
     print("--------------------------------") 
 
 def analizeData():
-    datas = pd.DataFrame(np.c_[data, y])
+    datas = pd.DataFrame(data)
     corr = datas.corr()
     #print(corr.shape)
     plt.figure(figsize=(10,10))
-    im, cbar= ut.heatmap(corr, cmap="RdYlGn")
+    
+
+    im, cbar= ut.heatmap(corr,np.arange(corr.shape[1]), np.arange(corr.shape[1]), cmap="RdYlGn")
     texts = ut.annotate_heatmap(im)
     
     plt.figure()

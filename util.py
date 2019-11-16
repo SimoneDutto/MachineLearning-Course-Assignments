@@ -4,7 +4,7 @@ from matplotlib.colors import ListedColormap, Normalize
 from matplotlib.ticker import FormatStrFormatter, StrMethodFormatter
 import numpy as np
 
-def heatmap(datas, ax=None,
+def heatmap(datas, row_labels, col_labels,  ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
@@ -43,8 +43,8 @@ def heatmap(datas, ax=None,
     ax.set_xticks(np.arange(datas.shape[1]))
     ax.set_yticks(np.arange(datas.shape[0]))
     # ... and label them with the respective list entries.
-    ax.set_xticklabels(np.arange(datas.shape[1]))
-    ax.set_yticklabels(np.arange(datas.shape[0]))
+    ax.set_xticklabels(row_labels)
+    ax.set_yticklabels(col_labels)
 
     # Let the horizontal axes labeling appear on top.
     ax.tick_params(top=True, bottom=False,
