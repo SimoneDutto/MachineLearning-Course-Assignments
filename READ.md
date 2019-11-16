@@ -1,8 +1,8 @@
 # Machine Learning and Artificial Intelligence: Homework_1
 #### Description of the assignment
-The purpose of this work is to use some classification algorithms and compare them with a toy dataset given by the sklearn library. 
+The purpose of this work is to use some classification algorithms and compare their results on a toy dataset given by the sklearn library. 
 #### Dataset
-The Wine dataset is a preset of sklearn, it is a copy  of the UCI ML Wine recognition dataset.
+The Wine dataset is a preset of sklearn, it is a copy of the UCI ML Wine recognition dataset.
 The data is the results of a chemical analysis of wines grown in the same region in Italy by three different cultivators. There are different measurements taken for different constituents found in the three types of wine.
 
 **Characteristics:**
@@ -11,16 +11,16 @@ The data is the results of a chemical analysis of wines grown in the same region
 - 13 numeric continuos attributes plus the class label
 -  No missing attribute values
 
-From the 12 attributes we choose to take the first two, which are respectively *Alcohol* and *Malic acid* 
+From the 13 attributes we chose to take the first two, which are respectively *Alcohol* and *Malic acid* 
 
 <img src="DataSet.png" alt="drawing" width="300"/>
 
 #### Training procedure
 We split data into Train, Validation and Test with  50%, 20% and 30% partition. 
-Then, we train our model on Train set, we tune our hyperparameters on Validation set and finally we evaluate performance on the Test set. 
+Then, we train our model on Train Set, we tune our hyperparameters on Validation Set and finally we evaluate performance on the Test set. 
 **Normalization**
-Both SVM and K-Nearest Neighboors are critical with respect to distances measurament I decided to give the option to apply the classifiers on normalized data to be able to see the difference between the two scenarios.
-For the normalization procedure I've used  `sklearn.preprocessing.StandardScaler` which standardize features by removing the mean and scaling to unit variance fitted on the train set.
+Both SVM and K-Nearest Neighboors are critical with respect to distances measurament, therefore I decided to give the option to apply the classifiers on normalized data to be able to see the difference between the two scenarios.
+For the normalization procedure I've used  `sklearn.preprocessing.StandardScaler` which standardize features by removing the mean and scaling to unit variance fitted on the train+validation set.
 
 $$ z =  (x-u)/s $$
 
@@ -28,7 +28,7 @@ $$ z =  (x-u)/s $$
 So, even if normalization is suggested for kNN and SVM, with this dataset it doesn't affect always the results and for some seeds normalization can reduce the accuracy of the classifier.   
 
 ####K-Nearest Neighboors Classifier
-The intuition is to classify a new entry calculating the *distance* from this point to its nearest   *k-points* and assigning the label according to major voting in its k-neighborhood.
+The intuition is to classify a new entry calculating the *distances* from this point to its nearest *k-points* and assigning the label according to major voting in its k-neighborhood.
 So, the critical parameters to choose are *k* and the *distance* metric.
 I used for the K-NN algorithm `sklearn.neighbors.KNeighborsClassifier` and trained different model with k = [1,3,5,7] and the minkowski distance metric 
 $$(\sum_{i=1}^{n}{|X_{i} - Y_{i}|^{p}})^{1/p} $$ 
@@ -38,9 +38,9 @@ For example with k=1 we can see that the decision boundaries highlight the outli
 <img src="knn.png" alt="drawing" width="470"/>
 <img src="knn_acc.png" alt="drawing" width="300"/>
 According to our validation process the best value for k is 7 with an accuracy of 80.5%. 
-Therefore, we obtain an accuracy on test set of 81.5%.
+Then, we obtain an accuracy on test set of 81.5%.
 
-Normalization is suggested for kNN. Even if, in this case, the result on test set is a little bit lower with a 79.6% accuracy.
+Normalization is suggested for kNN. In fact, in this case, the result on test set is a little bit higher with a 81.5% accuracy.
 ![ ](knn_norm.png )
 <img src="knn_norm_acc.png" alt="drawing" width="300"/>
 
@@ -61,7 +61,7 @@ The best accuracy on validation set is obtained with C=0.1 (75.0%) and on our te
 It is interesting to see that if we choose low values of C our boundaries are wrong because the relaxation are too strong.
 
 For SVM normalization is crucial, because the core is base on distance measument. 
-In fact, with C=1, we obtain 88.9% accuracy on test set. 
+But, this time with C=1 we got the same performance on train set with 85.1% accuracy.
 <img src="svmlinear_norm.png" alt="drawing" width="500"/>
 <img src="svmlinear_norm_acc.png" alt="drawing" width="300"/>
 
@@ -79,7 +79,7 @@ $$ gamma = 1 / (n~features~ * X~var~) $$
 <img src="svmrbf_acc.png" alt="drawing" width="300"/>
 
 The boundaries are changed, in fact we can clearly obser that with C = 1000, for example, the shape is spheric which is not possible with linear kernel.
-The highest accuracy on validation is with C = 100 (80.5%), and this model has a 88.9% accuracy on test set. 
+The highest accuracy on validation is with C = 100 (80.5%), and this model has a 85.1% accuracy on test set. 
 
 Normalizing, we obtain the higher accuracy on validation set(83.3%), and a little bit lower accuracy on test set with C=1 (83.3%).
 
@@ -98,8 +98,8 @@ With normalization the best model is with C=0.1 and gamma=1 (83.3% accuracy on v
 
 
 #### GridSearch and K-Fold
-Usually when the dataset is small, as it is ours, it is a good choise to use cross-validation.  K-Fold is the most common cross validation method. 
-<br></br><br></br>
+Usually when the dataset is small, as it is ours, it is a good choise to use cross-validation. K-Fold is the most common cross validation method and it is one among the best approach if we have limited data because it ensures that every observation from the original dataset has the chance of appearing in training and test set.
+<br></br>
 It consists in:
 - Shuffle the dataset randomly.
 - Split the dataset into k groups
@@ -117,28 +117,34 @@ The best model is with C=10 and gamma=0.1, it reaches 81.4% accuracy on validati
 
 With normalization, implemented with `sklearn.pipeline.Pipeline` to guarantee a correct normalization process in each k-fold iteration, we grant ourselves better result on validaion set 83.3% and same on test set.
 <img src="k_fold_norm_acc.png" alt="drawing" width="270"/>
-Using K-fold permits to exploit the maximum quantity of data, it is expecially useful with small dataset where train, validation, test splitting can reduce the number of rows for training a lot.
+
 
 
 #### SVM or kNN
-For this dataset the best option is to use SVM with RBF kernel, it is able to shape better data and it is way faster to classify once we have trained the model. kNN is easy to tune, support multi-class classification easily and it doesn't need a proper training phase but each time we want to classify a entry we need to compute the distance of each point from the entry and this is computationally expensive.
+For this dataset the best option is to use SVM with linear of RBF kernel, it is able to shape better data and it is way faster to classify once we have trained the model. 
+kNN is easy to tune, support multi-class classification easily and it doesn't need a proper training phase but each time we want to classify a entry we need to compute the distance of each point from the entry and this is computationally expensive.
 
 #### Different attributes
- Since now, we have tried our model with the first 2 attributes, but what if we try with different attributes.
+ Since now, we have tried our model with the first 2 attributes, but what if we try with different attributes?
 For better choosing I decided to plot the correlation matrix.
 ![ ](corr_matrix.png)
-The best choise is to take 2 attributes with correlation near 0, because it means we can exploit the maximum quantity of information from them. We can notice that the first and second, our previous choise, were a good choise (0.07 correlation). 
+The best choise is to take 2 attributes with correlation near 0, because generally it means we can exploit the maximum quantity of information from them. We can notice that the first and second, our previous choise, were a good choise (0.07 correlation). 
 Attribute 0 and 11 have correlation equal to 0.07, so we are gonna try with these two.
 This table shows the result of the model choosen by the validation process when permorms on test set.
+<br></br>
 
 | Classifier  | Parameter | Normalization| Accuracy on test set  | 
 |---|---|----|---|
-|  kNN | k=3|  N | 0.963  |  
+|  kNN | k=3|  N | 0.944  |  
 | kNN | k=3  |  Y |  0.944|
 |  SVM-Linear | C=100| N  | 0.963  |
-|  SVM-Linear | C=1 |  Y |  0.963 |
-|  SVM-rbf | C=1000 gamma=scale|  N | 0.963  |
+|  SVM-Linear | C=1 |  Y |  0.944 |
+|  SVM-rbf | C=1000 gamma=scale|  N | 0.944  |
 |  SVM-rbf | C=0.1 gamma=scale |  Y | 0.963 |
 
 We can notice that choosing the right attributes to analyze is as import as tuning a model. 
 Since, it is computationally expensive to use all attributes, for linear dimensionality reduction is commonly used Singular Value Decomposition of the data to project it to a lower dimensional space and so having good result using just few attributes.
+
+#### Note to code
+I decided to build the code into two modules, one(homework1.py) is the core of the program with all the classifiers and the possibility of choosing the preferred one with or without normalization, the other one (utils.py) is composed of plotting utility functions.
+<img src="menu.png" alt="drawing" width="270"/>
